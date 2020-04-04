@@ -8,7 +8,7 @@ scope: source.assembly
 variables:
   command: '[A-Z]+'
   constant: '[A-Z_]+'
-  label: '[a-z]+'
+  label: '[a-z][A-Za-z0-9_]*'
   directive: '\.[a-z]+'
   newline: '[\r\n]+'
   hexadecimal: '[0x]?[0-9A-Fa-f]+'
@@ -53,8 +53,8 @@ contexts:
 
   operand:
     - include: constant
-    - include: literal
     - include: label
+    - include: literal
     - match: '({{newline}})'
       pop: true
 
