@@ -1,0 +1,66 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+name: Assembly
+file_extensions: [asm]
+scope: source.assembly
+
+variables:
+  constant: '[A-Z_]+'
+  label: '[a-z]+'
+
+contexts:
+  main:
+    # The main context is the initial starting point of our syntax.
+    # Include other contexts from here (or specify them directly).
+    - include: line_comment
+    - include: label_declaration
+    - include: constant_declaration
+    - include: command
+
+  prototype:
+    - include: line_comment
+
+  # line comments
+  line_comment:
+    - match: '(#.*)(?=[\r\n])?'
+      scope: comment.line.assembly
+
+  constant_declaration:
+    - match: '({{constant}})\s*(?=\=)'
+      scope: variable.other.constant.assembly
+      push:
+        - match: '(=)'
+          scope: keyword.operator.assembly
+        - include: constant
+        - include: literal
+        - match: '([\r\n])'
+          pop: true
+
+  label_declaration:
+    - match: '({{label}}(?=:))'
+      scope: entity.name.tag.assembly
+
+  command:
+    - match: '([A-Z]+)'
+      scope: entity.name.function.assembly
+      push:
+        - include: constant
+        - include: literal
+        - include: label
+        - match: '([\r\n])'
+          pop: true
+
+  literal:
+    - match: '[0x]?([0-9A-Fa-f])+'
+      scope: constant.numeric.integer.hexadecimal.assembly
+
+  constant:
+    - match: '({{constant}})'
+      scope: variable.other.constant.assembly
+
+  label:
+    - match: '({{label}})'
+      scope: entity.name.tag.assembly
+
+
