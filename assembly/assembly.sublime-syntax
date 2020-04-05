@@ -6,11 +6,14 @@ file_extensions: [asm]
 scope: source.assembly
 
 variables:
+  newline: '[\r\n]+'
   command: '[A-Z]+'
   constant: '[A-Z_]+'
   label: '[a-z][A-Za-z0-9_]*'
   directive: '\.[a-z]+'
-  newline: '[\r\n]+'
+  macro: '_[A-Za-z0-9_]+'
+  macro_argument: '{{label}}'
+  macro_continuation: '//\s*{{newline}}'
   hexadecimal: '[0x]?[0-9A-Fa-f]+'
 
 contexts:
@@ -18,8 +21,9 @@ contexts:
     # The main context is the initial starting point of our syntax.
     # Include other contexts from here (or specify them directly).
     - include: label_declaration
+    - include: macro_declaration
     - include: constant_declaration
-    - include: command
+    - include: operator
     - include: directive-statement
 
   prototype:
@@ -33,6 +37,26 @@ contexts:
     - match: '({{label}}(?=:))'
       scope: entity.name.tag.assembly
 
+  macro_declaration:
+    - match: '(def)\s+(?=_)'
+      scope: keyword.control.assembly
+      push:
+        - match: '({{macro}})'
+          scope: entity.name.function.assembly
+        - match: '({{label}})'
+          scope: variable.parameter.assembly
+        - match: '({{macro_continuation}})'
+          scope: comment.line.assembly
+          set:
+            - include: macro_operator
+            - match: '({{macro_continuation}})'
+              scope: comment.line.assembly
+            - match: '{{newline}}'
+              pop: true
+          # allow empty macro
+        - match: '{{newline}}'
+          pop: true
+
   constant_declaration:
     - match: '({{constant}})\s*(?=\=)'
       scope: variable.other.constant.assembly
@@ -41,15 +65,25 @@ contexts:
           scope: keyword.operator.assembly
           set: operand
 
-  command:
-    - match: '({{command}})'
+  operator:
+    - match: '({{command}}|{{macro}})'
       scope: entity.name.function.assembly
       set: operand
+
+  macro_operator:
+    - match: '({{command}}|{{macro}})'
+      scope: entity.name.function.assembly
+      set: macro_operand
+    - match: '{{newline}}'
+      pop: true
+    - include: macro_continuation
 
   directive-statement:
     - match: '({{directive}})'
       scope: entity.name.class.assembly
       set: operand
+
+  ######################################################
 
   operand:
     - include: constant
@@ -57,6 +91,19 @@ contexts:
     - include: literal
     - match: '({{newline}})'
       pop: true
+
+  macro_operand:
+    - include: constant
+    - include: label
+    - include: literal
+    - include: macro_continuation
+    - match: '({{newline}})'
+      pop: true
+
+  macro_continuation:
+    - match: '({{macro_continuation}})'
+      scope: comment.line.assembly
+      set: macro_operator
 
   literal:
     - match: '({{hexadecimal}})+'
