@@ -1,0 +1,41 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+name: eiris-dat
+file_extensions: [dat]
+scope: source.eiris-dat
+
+contexts:
+  main:
+    # The main context is the initial starting point of our syntax.
+    # Include other contexts from here (or specify them directly).
+    - include: attribute_headers
+    - include: attributes
+
+  # [attr_header]
+  attribute_headers:
+    - match: '(?=\[)'
+      push:
+        - match: '[^\[\]]'
+          scope: entity.name.class.eiris-dat
+        - match: '\]'
+          pop: true
+
+  # attr_name = attr_value
+  attributes:
+    - match: '^[a-zA-Z1-9\_\+]+(?=\=.*)'
+      push: inside_attribute
+
+  inside_attribute:
+    - meta_scope: constant.numeric.eiris-dat
+    - match: '\='
+      scope: keyword.operator.assignment.shell
+      set: attribute_value
+
+  attribute_value:
+    - meta_scope: string.quoted.double.eiris-dat
+    - match: '\\.'
+      scope: constant.character.escape.eiris-dat
+    - match: '$'
+      scope: punctuation.definition.string.end.eiris-dat
+      pop: true
